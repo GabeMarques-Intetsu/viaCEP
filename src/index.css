@@ -6,6 +6,13 @@ body {
   margin: 0;
   background-color: #80deea;
   font-family: sans-serif;
+}
+
+/* O React monta dentro de #root, que fica entre <body> e <main>.
+   A centralização precisa acontecer aqui (e #root precisa ocupar a
+   largura/altura toda), senão o <main width:40%> resolve contra um
+   #root colapsado e o layout inteiro encolhe. */
+#root {
   min-height: 100vh;
   display: flex;
   justify-content: center;
