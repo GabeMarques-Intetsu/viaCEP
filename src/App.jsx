@@ -24,10 +24,22 @@ export default function App() {
 
   // Cancela requisição anterior caso o usuário busque outro CEP rapidamente.
   const controllerRef = useRef(null);
+  // Evita refazer a mesma busca (ex.: chegar a 8 dígitos e depois sair do campo).
+  const lastSearchedRef = useRef('');
 
   const handleCepChange = (event) => {
-    setAddress((prev) => ({ ...prev, cep: maskCep(event.target.value) }));
+    const masked = maskCep(event.target.value);
+    setAddress((prev) => ({ ...prev, cep: masked }));
     if (error) setError(false);
+
+    const clean = sanitizeCep(masked);
+    // Assim que o CEP fica completo (8 dígitos), busca automaticamente —
+    // sem precisar de Tab/blur.
+    if (clean.length === 8) {
+      searchCep(clean);
+    } else {
+      lastSearchedRef.current = '';
+    }
   };
 
   const handleFieldChange = (field) => (event) => {
@@ -35,15 +47,11 @@ export default function App() {
     setAddress((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Dispara a busca ao sair do campo CEP (evento blur).
-  const handleCepBlur = async () => {
-    const clean = sanitizeCep(address.cep);
-
-    // Campo vazio: não busca nem mostra erro.
-    if (clean.length === 0) {
-      setError(false);
-      return;
-    }
+  // Busca o endereço no ViaCEP e preenche os campos.
+  const searchCep = async (clean) => {
+    // Não repete a busca do mesmo CEP já consultado.
+    if (clean === lastSearchedRef.current) return;
+    lastSearchedRef.current = clean;
 
     controllerRef.current?.abort();
     controllerRef.current = new AbortController();
@@ -92,7 +100,6 @@ export default function App() {
           placeholder="CEP"
           value={address.cep}
           onChange={handleCepChange}
-          onBlur={handleCepBlur}
           maxLength={9}
           className={error ? 'input-cep-error' : undefined}
           aria-invalid={error}
